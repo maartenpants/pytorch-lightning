@@ -828,7 +828,11 @@ class TrainerTrainLoopMixin(ABC):
                 # in the training step to prevent dangling gradients in multiple-optimizer setup.
                 if len(self.optimizers) > 1:
                     for param in self.get_model().parameters():
-                        param.requires_grad = False
+                        if param.is_leaf:   # we need to check is_leaf here, since if a user is using loss.backward()
+                                            # with create_graph=True to compute higher-level derivativesm
+                                            # some parameters will become non-leaf tensors and requires_grad cannot be
+                                            # set to False
+                            param.requires_grad = False
                     for group in optimizer.param_groups:
                         for param in group['params']:
                             param.requires_grad = True
